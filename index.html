@@ -1,1 +1,95 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>StickyVoiceNote</title>
+  <style>
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      background: #fff8b1;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      padding: 20px;
+      padding-bottom: 120px;
+    }
+    .note-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .note-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+    }
+    #micBtn {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      color: #fff;
+      font-size: 18px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="noteList"></div>
+  <button id="micBtn">🎙️ Mów coś</button>
 
+  <script>
+    const listContainer = document.getElementById("noteList");
+    const micBtn = document.getElementById("micBtn");
+
+    function loadNotes() {
+      const data = JSON.parse(localStorage.getItem("notes") || "[]");
+      listContainer.innerHTML = "";
+      data.forEach((note, i) => {
+        const item = document.createElement("div");
+        item.className = "note-item";
+        item.innerHTML = `<input type="checkbox" id="cb${i}"> <label for="cb${i}">${note}</label>`;
+        listContainer.appendChild(item);
+      });
+    }
+
+    function saveNote(text) {
+      if (!text) return;
+      const notes = JSON.parse(localStorage.getItem("notes") || "[]");
+      notes.push(text);
+      localStorage.setItem("notes", JSON.stringify(notes));
+      loadNotes();
+    }
+
+    function startSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Twoja przeglądarka nie wspiera rozpoznawania mowy");
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = "pl-PL";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        saveNote(transcript);
+      };
+      recognition.onerror = (event) => {
+        alert("Błąd mikrofonu: " + event.error);
+      };
+      recognition.start();
+    }
+
+    micBtn.addEventListener("click", startSpeechRecognition);
+    loadNotes();
+  </script>
+</body>
+</html>
